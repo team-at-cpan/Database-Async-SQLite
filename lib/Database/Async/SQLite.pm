@@ -4,8 +4,8 @@ package Database::Async::SQLite 0.001;
 use strict;
 use warnings;
 
-use DynaLoader;
+use parent qw(DynaLoader);
 
-__PACKAGE__->bootstrap($VERSION);
+__PACKAGE__->bootstrap(__PACKAGE__->VERSION);
 
 1;

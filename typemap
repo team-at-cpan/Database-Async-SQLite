@@ -1,21 +1,58 @@
-HV * T_HVREF_REFCOUNT_FIXED
+TYPEMAP
+sqlite_dbh * T_SQLITE_DBH
+sqlite_sth * T_SQLITE_STH
+string T_STRING
+const string T_CONST_STRING
 
 INPUT
-T_HVREF_REFCOUNT_FIXED
-        STMT_START {
-                SV* const xsub_tmp_sv = $arg;
-                SvGETMAGIC(xsub_tmp_sv);
-                if (SvROK(xsub_tmp_sv) && SvTYPE(SvRV(xsub_tmp_sv)) == SVt_PVHV){
-                    $var = (HV*)SvRV(xsub_tmp_sv);
-                }
-                else{
-                    Perl_croak(aTHX_ \"%s: %s is not a HASH reference\",
-                                ${$ALIAS?\q[GvNAME(CvGV(cv))]:\qq[\"$pname\"]},
-                                \"$var\");
-                }
-        } STMT_END
+T_SQLITE_DBH
+    if( sv_isobject($arg) && (SvTYPE(SvRV($arg)) == SVt_PVMG) ) {
+        $var = ($type)SvIV((SV*)SvRV( $arg ));
+    } else {
+        warn( \"${Package}::$func_name() -- $var is not a blessed SV reference\" );
+        XSRETURN_UNDEF;
+    }
+
+T_SQLITE_STH
+    if( sv_isobject($arg) && (SvTYPE(SvRV($arg)) == SVt_PVMG) ) {
+        $var = ($type)SvIV((SV*)SvRV( $arg ));
+    } else {
+        warn( \"${Package}::$func_name() -- $var is not a blessed SV reference\" );
+        XSRETURN_UNDEF;
+    }
+
+T_STRING
+    {
+        if (SvTYPE($arg) != SVt_PV) {
+            warn(\"${Package}::$func_name() -- $var is invalid svtype\");
+            XSRETURN_UNDEF;
+        }
+        if (SvCUR($arg) == 0) {
+            warn(\"${Package}::$func_name() -- $var is empty\");
+            XSRETURN_UNDEF;
+        }
+        $var = string(SvPV_nolen($arg));
+    }
+
+T_CONST_STRING
+    {
+        if (SvTYPE($arg) != SVt_PV) {
+            warn(\"${Package}::$func_name() -- $var is invalid svtype\");
+            XSRETURN_UNDEF;
+        }
+        if (SvCUR($arg) == 0) {
+            warn(\"${Package}::$func_name() -- $var is empty\");
+            XSRETURN_UNDEF;
+        }
+        $var = string(SvPV_nolen($arg));
+    }
 
 OUTPUT
-T_HVREF_REFCOUNT_FIXED
-        $arg = newRV_noinc((SV*)$var);
+T_SQLITE_DBH
+    sv_setref_pv($arg, "Database::Async::SQLite", (void *)$var);
 
+T_SQLITE_STH
+    sv_setref_pv($arg, "Database::Async::SQLite::STH", (void *)$var);
+
+T_STRING
+    sv_setpvn($arg, $var.c_str(), $var.size());
